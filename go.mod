@@ -1,4 +1,4 @@
-module github.com/stellar/go
+module github.com/vxxvvxxv/stellar-go
 
 go 1.23
 
