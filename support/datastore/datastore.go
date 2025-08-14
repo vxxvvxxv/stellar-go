@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/stellar/go/support/errors"
 )
@@ -16,6 +17,7 @@ type DataStoreConfig struct {
 // DataStore defines an interface for interacting with data storage
 type DataStore interface {
 	GetFileMetadata(ctx context.Context, path string) (map[string]string, error)
+	GetFileLastModified(ctx context.Context, filePath string) (time.Time, error)
 	GetFile(ctx context.Context, path string) (io.ReadCloser, error)
 	PutFile(ctx context.Context, path string, in io.WriterTo, metaData map[string]string) error
 	PutFileIfNotExists(ctx context.Context, path string, in io.WriterTo, metaData map[string]string) (bool, error)
@@ -29,11 +31,10 @@ type DataStore interface {
 func NewDataStore(ctx context.Context, datastoreConfig DataStoreConfig) (DataStore, error) {
 	switch datastoreConfig.Type {
 	case "GCS":
-		destinationBucketPath, ok := datastoreConfig.Params["destination_bucket_path"]
-		if !ok {
-			return nil, errors.Errorf("Invalid GCS config, no destination_bucket_path")
-		}
-		return NewGCSDataStore(ctx, destinationBucketPath, datastoreConfig.Schema)
+		return NewGCSDataStore(ctx, datastoreConfig)
+	case "S3":
+		return NewS3DataStore(ctx, datastoreConfig)
+
 	default:
 		return nil, errors.Errorf("Invalid datastore type %v, not supported", datastoreConfig.Type)
 	}
